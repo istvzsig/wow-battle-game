@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WOW - Turn Based MMORPG</title>
+</head>
+<body>
+  <h1>Character Creation</h1>
+  <input id="name" placeholder="Name">
+  <select id="class">
+    <option>Warrior</option>
+    <option>Mage</option>
+    <option>Druid</option>
+  </select>
+  <button onclick="createPlayer()">Create</button>
+
+  <div id="playerStats"></div>
+  <button onclick="startBattle()">Fight a Boar</button>
+  <div id="battleLog"></div>
+
+  <script>
+    let player = null;
+
+    async function createPlayer() {
+      const name = document.getElementById("name").value;
+      document.getElementById("name").setAttribute("required", true);
+      const cls = document.getElementById("class").value;
+      
+      if(!name) {
+        console.error("Player name is a must");
+        return
+      }
+
+      const resp =  await fetch("http://127.0.0.1:8080/create", {
+        method: "post",
+        body: JSON.stringify({ name: name, class: cls }),
+        headers: { "Content-Type": "application/json" }
+      });
+
+      return await resp.json();
+    }
+
+    function startBattle() {
+      fetch("http://127.0.0.1:8080/battle", {
+        method: "POST",
+        body: JSON.stringify(player),
+        headers: { "Content-Type": "application/json" }
+      }).then(res => res.json())
+        .then(result => {
+          document.getElementById("battleLog").innerText =
+            `Battle over! ${result.Winner} won.\nPlayer HP: ${result.PlayerHP}\nMonster HP: ${result.MonsterHP}`;
+        });
+    }
+  </script>
+</body>
+</html>
