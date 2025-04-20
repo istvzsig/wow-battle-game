@@ -1,6 +1,6 @@
 .DS_Store
 .vscode
 .env
-/log/
+/log/*.log
 *.log
 wow-battle-game-firebase-adminsdk-fbsvc-db1860d305.json
