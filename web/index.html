@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Character</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+    }
+    input, select, button {
+      display: block;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  
+  <!-- Character creation -->
+  <h1>Create Account</h1>
+  <label>Account name:</label>
+  <input type="text" id="name" placeholder="Name" required />
+  <label>Email:</label>
+  <input type="email" id="email" placeholder="Email" required />
+  <label>Password:</label>
+  <input type="password" id="pw" placeholder="Password"required/>
+  <button onclick="createAccount()">Create Account</button>
+  
+  <!-- Character creation -->
+  <!-- <h1>Create Character</h1>
+  <label>Character name:</label>
+  <input type="text" id="charName" placeholder="Character name" />
+
+  <label>Class:</label>
+  <select id="class">
+    <option value="Warrior">Warrior</option>
+    <option value="Mage">Mage</option>
+    <option value="Rogue">Rogue</option>
+  </select>
+
+  <button onclick="createCharacter()">Create</button>
+
+  <h2>Character Info</h2>
+  <pre id="result"></pre> -->
+
+  <script>
+    async function createAccount() {
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("pw").value;
+
+      const url = "http://localhost:8080/account";
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+
+      if(name && email && password) {
+        const response = await fetch(
+          url,
+          {...options, body: JSON.stringify({name, email, password})}
+        );
+        return await response.json();
+      }
+    }
+
+    async function createCharacter() {
+      const name = document.getElementById("name").value;
+      const playerClass = document.getElementById("class").value;
+
+      await fetch("http://localhost:8080/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name: name, class: playerClass })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("result").textContent = JSON.stringify(data.character, null, 2);
+      })
+      .catch(err => {
+        document.getElementById("result").textContent = "Error: " + err;
+      });
+    }
+  </script>
+
+</body>
+</html>
