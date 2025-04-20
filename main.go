@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/istvzsig/wow-battle-game/server"
+	"github.com/istvzsig/wow-battle-game/internal/server"
 	"github.com/joho/godotenv"
 )
 
