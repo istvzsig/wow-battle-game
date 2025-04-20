@@ -1,4 +1,4 @@
-package main
+package character
 
 import (
 	"encoding/json"
@@ -26,7 +26,7 @@ func NewCharacter() *Character {
 }
 
 func (char *Character) Create(w http.ResponseWriter, r *http.Request) {
-	enableCORS(&w)
+	// enableCORS(&w)
 
 	// Handle OPTIONS (CORS preflight)
 	if r.Method == http.MethodOptions {

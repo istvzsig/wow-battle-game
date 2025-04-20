@@ -1,6 +1,9 @@
-package main
+package battle
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
 
 // BattleResult stores the outcome of a single battle.
 type BattleResult struct {
@@ -15,5 +18,5 @@ type BattleResultResponse struct {
 }
 
 func (b *BattleResult) Create(w http.ResponseWriter, r *http.Request) {
-
+	log.Println("Creating battle result")
 }
