@@ -9,9 +9,10 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"firebase.google.com/go/db"
+	firebase "firebase.google.com/go/db"
 	"github.com/google/uuid"
 
+	"github.com/istvzsig/wow-battle-game/internal/db"
 	"github.com/istvzsig/wow-battle-game/internal/logger"
 )
 
@@ -28,14 +29,15 @@ type AccountList struct {
 }
 
 type AccountCreateResponse struct {
-	Status   int `json:"status"`
-	*Account `json:"account"`
+	Status   int    `json:"status"`
+	Msg      string `json:"msg"`
+	*Account `json:"account,omitempty"`
 }
 
 // var mu *sync.Mutex
 
 // Create Account
-func (acc *Account) Create(w http.ResponseWriter, r *http.Request, db *db.Client) {
+func (acc *Account) Create(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -46,20 +48,19 @@ func (acc *Account) Create(w http.ResponseWriter, r *http.Request, db *db.Client
 	}
 
 	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusAccepted)
+		WithJSONResponse(w, http.StatusAccepted)
 		logger.Printf("CORS preflight request from %s\n", r.RemoteAddr)
 		return
 	}
 
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		WithJSONResponse(w, http.StatusMethodNotAllowed)
 		logger.Fatalf("Rejected non-POST request from %s: %s\n", r.RemoteAddr, r.Method)
-		log.Fatalf("Rejected non-POST request from %s: %s\n", r.RemoteAddr, r.Method)
 		return
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
-		http.Error(w, "Failed to parse JSON", http.StatusInternalServerError)
+		WithJSONResponse(w, http.StatusInternalServerError)
 		logger.Fatalf("JSON decode error from %s: %v\n", r.RemoteAddr, err)
 		return
 	}
@@ -70,26 +71,25 @@ func (acc *Account) Create(w http.ResponseWriter, r *http.Request, db *db.Client
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(acc.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		WithJSONResponse(w, http.StatusInternalServerError, "Failed to hash password.")
 		logger.Fatalf("Password hashing error from %s: %v\n", r.RemoteAddr, err)
 		return
 	}
 	acc.Password = string(hashedPassword)
 
-	ref := db.NewRef("users").Child(acc.ID)
+	ref := db.FirestoreClient.NewRef("users").Child(acc.ID)
 
-	// Check if the user already exists
-	accList, err := GetUsers(ctx, db.NewRef("users"))
+	// Check if the account already exists
+	accList, err := GetUsers(ctx, db.FirestoreClient.NewRef("users"))
 	if err != nil {
-		http.Error(w, "Failed to get users", http.StatusInternalServerError)
 		logger.Fatalf("Cannot find accounts list %s: %v\n", r.RemoteAddr, err)
 		return
 	}
 
 	// Check for duplicate accounts based on a unique field (e.g., email)
 	for _, existingAcc := range accList.Items {
-		if existingAcc.Email == acc.Email { // Assuming Email is a field in Account
-			http.Error(w, "User already exists", http.StatusConflict)
+		if existingAcc.Email == acc.Email || existingAcc.Name == acc.Name || existingAcc.Password == acc.Password { // Assuming Email is a field in Account
+			WithJSONResponse(w, http.StatusConflict, "Account already exists.")
 			logger.Printf("Duplicate account attempt from %s: %s\n", r.RemoteAddr, acc.Email)
 			return
 		}
@@ -102,15 +102,7 @@ func (acc *Account) Create(w http.ResponseWriter, r *http.Request, db *db.Client
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(AccountCreateResponse{
-		Status:  http.StatusCreated,
-		Account: acc,
-	}); err != nil {
-		log.Printf("Failed to encode account response: %v", err)
-		if logger != nil {
-			logger.Printf("JSON encode error for %s: %v\n", r.RemoteAddr, err)
-		}
-	}
+	WithJSONResponse(w, http.StatusCreated, "Account created")
 	logger.Printf("Account created with id %v", acc.ID)
 }
 
@@ -130,7 +122,7 @@ func (acc *Account) Delete(w http.ResponseWriter, r *http.Request, id any) {
 }
 
 // Get users list from db
-func GetUsers(ctx context.Context, ref *db.Ref) (*AccountList, error) {
+func GetUsers(ctx context.Context, ref *firebase.Ref) (*AccountList, error) {
 	accountList := new(AccountList)
 
 	if err := ref.Get(ctx, &accountList.Items); err != nil {
@@ -138,4 +130,35 @@ func GetUsers(ctx context.Context, ref *db.Ref) (*AccountList, error) {
 	}
 
 	return accountList, nil
+}
+
+func WithJSONResponse(w http.ResponseWriter, status int, args ...any) {
+	w.WriteHeader(status)
+
+	response := AccountCreateResponse{
+		Status: status,
+	}
+
+	// Use a switch statement to handle different types of arguments
+	switch len(args) {
+	case 1:
+		// If there's one argument, check its type
+		switch v := args[0].(type) {
+		case string:
+			response.Msg = v // If it's a string, set it as the message
+		case Account: // Assuming Account is a defined struct
+			response.Account = &v // If it's an Account, set it
+		default:
+			response.Msg = "Unknown error" // Fallback message
+		}
+	case 2:
+		// If there are two arguments, handle them accordingly
+		if msg, ok := args[0].(string); ok {
+			response.Msg = msg
+		}
+		response.Account = args[1].(*Account)
+	}
+
+	// Encode the response as JSON
+	json.NewEncoder(w).Encode(response)
 }

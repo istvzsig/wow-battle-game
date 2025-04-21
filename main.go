@@ -2,13 +2,15 @@ package main
 
 import (
 	"github.com/istvzsig/wow-battle-game/internal/api"
-
-	"github.com/istvzsig/wow-battle-game/internal/server"
+	"github.com/istvzsig/wow-battle-game/internal/db"
 )
 
 func main() {
-	var api = api.NewApiServer("localhost", 8080)
+	server := api.NewApiServer()
 
-	server.Init(api)
-	server.Run(api)
+	db.InitFirestore()
+
+	server.InitLogger("server.log")
+	server.InitRouter()
+	server.Run()
 }
