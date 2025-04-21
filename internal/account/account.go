@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"firebase.google.com/go/db"
 	"github.com/google/uuid"
-	"github.com/istvzsig/wow-battle-game/internal/logger"
-	"github.com/istvzsig/wow-battle-game/internal/server"
 
-	"golang.org/x/crypto/bcrypt"
+	"github.com/istvzsig/wow-battle-game/internal/logger"
 )
 
 type Account struct {
@@ -35,7 +35,7 @@ type AccountCreateResponse struct {
 // var mu *sync.Mutex
 
 // Create Account
-func (acc *Account) Create(w http.ResponseWriter, r *http.Request) {
+func (acc *Account) Create(w http.ResponseWriter, r *http.Request, db *db.Client) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -76,10 +76,10 @@ func (acc *Account) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	acc.Password = string(hashedPassword)
 
-	ref := server.API.Db.NewRef("users").Child(acc.ID)
+	ref := db.NewRef("users").Child(acc.ID)
 
 	// Check if the user already exists
-	accList, err := GetUsers(ctx, server.API.Db.NewRef("users"))
+	accList, err := GetUsers(ctx, db.NewRef("users"))
 	if err != nil {
 		http.Error(w, "Failed to get users", http.StatusInternalServerError)
 		logger.Fatalf("Cannot find accounts list %s: %v\n", r.RemoteAddr, err)

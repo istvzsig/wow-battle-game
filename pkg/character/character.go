@@ -3,6 +3,8 @@ package character
 import (
 	"encoding/json"
 	"net/http"
+
+	"firebase.google.com/go/db"
 )
 
 // Character represents the character controlled by the user.
@@ -25,7 +27,7 @@ func NewCharacter() *Character {
 	return &Character{}
 }
 
-func (char *Character) Create(w http.ResponseWriter, r *http.Request) {
+func (char *Character) Create(w http.ResponseWriter, r *http.Request, db *db.Client) {
 	// enableCORS(&w)
 
 	// Handle OPTIONS (CORS preflight)

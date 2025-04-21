@@ -1,23 +1,14 @@
 package main
 
 import (
-	"log"
+	"github.com/istvzsig/wow-battle-game/internal/api"
 
 	"github.com/istvzsig/wow-battle-game/internal/server"
-	"github.com/joho/godotenv"
 )
 
 func main() {
+	var api = api.NewApiServer("localhost", 8080)
 
-	loadEnv()
-	server.InitAPI("localhost", 8080)
-	server.RunAPI()
-}
-
-func loadEnv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-		server.API.Logger.Fatal("Error loading .env file")
-	}
+	server.Init(api)
+	server.Run(api)
 }

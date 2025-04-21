@@ -2,23 +2,34 @@ package server
 
 import (
 	"log"
+	"os"
 
 	"github.com/istvzsig/wow-battle-game/internal/api"
+	"github.com/joho/godotenv"
 )
 
-var API *api.ApiServer
-
-func InitAPI(host string, port int) {
-	API = api.NewApiServer(host, port)
-	API.InitLogger()
-	API.InitRouter()
-	API.InitFirestore()
-}
-
-func RunAPI() {
-	if API != nil {
-		API.Run()
+func Run(api *api.ApiServer) {
+	if api != nil {
+		api.Run()
 	} else {
 		log.Fatal("API server is not initialized")
+	}
+}
+
+func Init(api *api.ApiServer) {
+	LoadEnv(api)
+	api.InitLogger("config.log")
+	api.InitRouter()
+	api.InitFirestore(
+		os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+		os.Getenv("DATABASE_URL"),
+	)
+}
+
+func LoadEnv(api *api.ApiServer) {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+		api.Logger.Fatal("Error loading .env file")
 	}
 }
