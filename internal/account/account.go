@@ -79,21 +79,21 @@ func (acc *Account) Create(w http.ResponseWriter, r *http.Request) {
 
 	ref := db.FirestoreClient.NewRef("users").Child(acc.ID)
 
-	// Check if the account already exists
-	accList, err := GetUsers(ctx, db.FirestoreClient.NewRef("users"))
-	if err != nil {
-		logger.Fatalf("Cannot find accounts list %s: %v\n", r.RemoteAddr, err)
-		return
-	}
+	// // Check if the account already exists
+	// accList, err := GetUsers(ctx, db.FirestoreClient.NewRef("users"))
+	// if err != nil {
+	// 	logger.Fatalf("Cannot find accounts list %s: %v\n", r.RemoteAddr, err)
+	// 	return
+	// }
 
-	// Check for duplicate accounts based on a unique field (e.g., email)
-	for _, existingAcc := range accList.Items {
-		if existingAcc.Email == acc.Email || existingAcc.Name == acc.Name || existingAcc.Password == acc.Password { // Assuming Email is a field in Account
-			WithJSONResponse(w, http.StatusConflict, "Account already exists.")
-			logger.Printf("Duplicate account attempt from %s: %s\n", r.RemoteAddr, acc.Email)
-			return
-		}
-	}
+	// // Check for duplicate accounts based on a unique field (e.g., email)
+	// for _, existingAcc := range accList.Items {
+	// 	if existingAcc.Email == acc.Email || existingAcc.Name == acc.Name || existingAcc.Password == acc.Password { // Assuming Email is a field in Account
+	// 		WithJSONResponse(w, http.StatusConflict, "Account already exists.")
+	// 		logger.Printf("Duplicate account attempt from %s: %s\n", r.RemoteAddr, acc.Email)
+	// 		return
+	// 	}
+	// }
 
 	// Persist the new account at the reference created using the ID
 	if err := ref.Set(ctx, acc); err != nil {

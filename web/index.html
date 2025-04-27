@@ -26,7 +26,7 @@
   <input type="email" id="email" placeholder="Email" required />
   <label>Password:</label>
   <input type="password" id="pw" placeholder="Password"required/>
-  <button onclick="createAccount()">Create Account</button>
+  <button id="createAccount" onclick="createAccount()">Create Account</button>
   
   <!-- Character creation -->
   <!-- <h1>Create Character</h1>
@@ -46,47 +46,89 @@
   <pre id="result"></pre> -->
 
   <script>
-    async function createAccount() {
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("pw").value;
+    const BASE_URL = "http://127.0.0.1:8888/";
 
-      const url = "http://localhost:8080/account";
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
+async function login() {
+  // Assume you have a login function that retrieves the token
+  const response = await fetch(BASE_URL + "login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
 
-      if(name && email && password) {
-        const response = await fetch(
-          url,
-          {...options, body: JSON.stringify({name, email, password})}
-        );
-        return await response.json();
-      }
+  if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem("token", data.token); // Store the token
+  }
+}
+async function createAccount() {
+  const name = getValue("name");
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("pw").value;
+
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    // credentials: "include",
+  };
+
+  if (name && email && password) {
+    const response = await fetch(BASE_URL + "account", {
+      ...options,
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Account created successfully:", data);
+
+      // Redirect the user to the login page or another page
+      // window.location.href = "/login";
+    } else {
+      const errorData = await response.json();
+      console.error("Error creating account:", errorData);
+      return errorData;
     }
+  } else {
+    console.error("Name, email, and password are required.");
+    return { error: "Name, email, and password are required." };
+  }
+}
 
-    async function createCharacter() {
-      const name = document.getElementById("name").value;
-      const playerClass = document.getElementById("class").value;
+async function createCharacter() {
+  const name = getValue("name");
+  const playerClass = document.getElementById("class").value;
+  console.log("ASD");
+  const response = await fetch(BASE_URL + "create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name: name, class: playerClass }),
+  });
 
-      await fetch("http://localhost:8080/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ name: name, class: playerClass })
-      })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("result").textContent = JSON.stringify(data.character, null, 2);
-      })
-      .catch(err => {
-        document.getElementById("result").textContent = "Error: " + err;
-      });
-    }
+  console.log(response.json());
+  // .then((res) => res.json())
+  // .then((data) => {
+  //   document.getElementById("result").textContent = JSON.stringify(
+  //     data.character,
+  //     null,
+  //     2
+  //   );
+  // })
+  // .catch((err) => {
+  //   document.getElementById("result").textContent = "Error: " + err;
+  // });
+}
+
+function getValue(selector = "") {
+  return document.getElementById(selector).value;
+}
+
   </script>
 
 </body>
